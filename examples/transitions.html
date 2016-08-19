@@ -28,7 +28,6 @@
 			videoNode2.startAt(3);
 			videoNode2.stopAt(11);
 
-
 			var crossFade = videoContext.createTransitionNode(VideoContext.DEFINITIONS.CROSSFADE);
 
 			videoNode2.connect(crossFade);
@@ -41,7 +40,24 @@
 			//Wire in button controls
 			var playButton = document.getElementById("play-button");
 			var pauseButton = document.getElementById("pause-button");
-			playButton.onclick = videoContext.play.bind(videoContext);
+			var videosPlayable = false;
+			
+			playButton.onclick = function() {
+				// workaround for browsers (like Chrome for Android) that need a user gesture
+				// to let videos play()
+				// see https://github.com/bbc/VideoContext/issues/14
+				if (!videosPlayable) {
+					videoNode1.element.play();
+					videoNode2.element.play();
+					videoNode1.element.pause();
+					videoNode2.element.pause();
+					
+					videosPlayable = true;
+				}
+
+				videoContext.play();
+			};
+
 			pauseButton.onclick = videoContext.pause.bind(videoContext);
 			//Set-up the visualisation using the convienience function in ../js/utils.js
 			InitVisualisations(videoContext, "graph-canvas", "visualisation-canvas");
