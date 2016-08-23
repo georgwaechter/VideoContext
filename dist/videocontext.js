@@ -2,41 +2,41 @@ var VideoContext =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
 /******/ 		if(installedModules[moduleId])
 /******/ 			return installedModules[moduleId].exports;
-
+/******/
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			exports: {},
 /******/ 			id: moduleId,
 /******/ 			loaded: false
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.loaded = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-
+/******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
 /******/ })
@@ -46,71 +46,57 @@ var VideoContext =
 /***/ function(module, exports, __webpack_require__) {
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
-
+	
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	var _SourceNodesVideonodeJs = __webpack_require__(1);
-
+	
 	var _SourceNodesVideonodeJs2 = _interopRequireDefault(_SourceNodesVideonodeJs);
-
+	
 	var _SourceNodesImagenodeJs = __webpack_require__(5);
-
+	
 	var _SourceNodesImagenodeJs2 = _interopRequireDefault(_SourceNodesImagenodeJs);
-
+	
 	var _SourceNodesCanvasnodeJs = __webpack_require__(6);
-
+	
 	var _SourceNodesCanvasnodeJs2 = _interopRequireDefault(_SourceNodesCanvasnodeJs);
-
+	
 	var _SourceNodesSourcenodeJs = __webpack_require__(2);
-
+	
 	var _ProcessingNodesCompositingnodeJs = __webpack_require__(7);
-
+	
 	var _ProcessingNodesCompositingnodeJs2 = _interopRequireDefault(_ProcessingNodesCompositingnodeJs);
-
+	
 	var _DestinationNodeDestinationnodeJs = __webpack_require__(10);
-
+	
 	var _DestinationNodeDestinationnodeJs2 = _interopRequireDefault(_DestinationNodeDestinationnodeJs);
-
+	
 	var _ProcessingNodesEffectnodeJs = __webpack_require__(11);
-
+	
 	var _ProcessingNodesEffectnodeJs2 = _interopRequireDefault(_ProcessingNodesEffectnodeJs);
-
+	
 	var _ProcessingNodesTransitionnodeJs = __webpack_require__(12);
-
+	
 	var _ProcessingNodesTransitionnodeJs2 = _interopRequireDefault(_ProcessingNodesTransitionnodeJs);
-
+	
 	var _rendergraphJs = __webpack_require__(13);
-
+	
 	var _rendergraphJs2 = _interopRequireDefault(_rendergraphJs);
-
+	
 	var _utilsJs = __webpack_require__(3);
-
-	var updateables = [];
-	var previousTime = undefined;
-	function registerUpdateable(updateable) {
-	    updateables.push(updateable);
-	}
-	function update(time) {
-	    if (previousTime === undefined) previousTime = time;
-	    var dt = (time - previousTime) / 1000;
-	    for (var i = 0; i < updateables.length; i++) {
-	        updateables[i]._update(dt);
-	    }
-	    previousTime = time;
-	    requestAnimationFrame(update);
-	}
-	update();
-
+	
+	var updateablesManager = new _utilsJs.UpdateablesManager();
+	
 	var VideoContext = (function () {
 	    /**
 	    * Initialise the VideoContext and render to the specific canvas. A 2nd parameter can be passed to the constructor which is a function that get's called if the VideoContext fails to initialise.
@@ -125,20 +111,33 @@ var VideoContext =
 	    * ctx.play();
 	    *
 	    */
-
+	
 	    function VideoContext(canvas, initErrorCallback) {
+	        var options = arguments.length <= 2 || arguments[2] === undefined ? { "preserveDrawingBuffer": true, "manualUpdate": false, "endOnLastSourceEnd": true, webglContextAttributes: { preserveDrawingBuffer: true, alpha: false } } : arguments[2];
+	
 	        _classCallCheck(this, VideoContext);
-
+	
 	        this._canvas = canvas;
-	        this._gl = canvas.getContext("experimental-webgl", { preserveDrawingBuffer: true, alpha: false });
+	        var manualUpdate = false;
+	        this.endOnLastSourceEnd = true;
+	        var webglContextAttributes = { preserveDrawingBuffer: true, alpha: false };
+	
+	        if ("manualUpdate" in options) manualUpdate = options.manualUpdate;
+	        if ("endOnLastSourceEnd" in options) this.endOnLastSourceEnd = options.endOnLastSourceEnd;
+	        if ("webglContextAttributes" in options) webglContextAttributes = options.webglContextAttributes;
+	
+	        if (webglContextAttributes.alpha === undefined) webglContextAttributes.alpha = false;
+	        if (webglContextAttributes.alpha === true) {
+	            console.error("webglContextAttributes.alpha must be false for correct opeation");
+	        }
+	
+	        this._gl = canvas.getContext("experimental-webgl", webglContextAttributes);
 	        if (this._gl === null) {
 	            console.error("Failed to intialise WebGL.");
 	            if (initErrorCallback) initErrorCallback();
 	            return;
 	        }
-
-	        this.endOnLastSourceEnd = true;
-
+	
 	        this._renderGraph = new _rendergraphJs2["default"]();
 	        this._sourceNodes = [];
 	        this._processingNodes = [];
@@ -147,38 +146,40 @@ var VideoContext =
 	        this._state = VideoContext.STATE.PAUSED;
 	        this._playbackRate = 1.0;
 	        this._destinationNode = new _DestinationNodeDestinationnodeJs2["default"](this._gl, this._renderGraph);
-
+	
 	        this._callbacks = new Map();
 	        this._callbacks.set("stalled", []);
 	        this._callbacks.set("update", []);
 	        this._callbacks.set("ended", []);
-
+	
 	        this._timelineCallbacks = [];
-
-	        registerUpdateable(this);
+	
+	        if (!manualUpdate) {
+	            updateablesManager.register(this);
+	        }
 	    }
-
+	
 	    //playing - all sources are active
 	    //paused - all sources are paused
 	    //stalled - one or more sources is unable to play
 	    //ended - all sources have finished playing
 	    //broken - the render graph is in a broken state
-
+	
 	    /**
 	    * Register a callback to happen at a specific point in time.
 	    * @param {number} time - the time at which to trigger the callback.
 	    * @param {Function} func - the callback to register.
 	    * @param {number} ordering - the order in which to call the callback if more than one is registered for the same time.
 	    */
-
+	
 	    _createClass(VideoContext, [{
 	        key: "registerTimelineCallback",
 	        value: function registerTimelineCallback(time, func) {
 	            var ordering = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-
+	
 	            this._timelineCallbacks.push({ "time": time, "func": func, "ordering": ordering });
 	        }
-
+	
 	        /**
 	        * Unregister a callback which happens at a specific point in time.
 	        * @param {Function} func - the callback to unregister.
@@ -190,11 +191,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion = true;
 	            var _didIteratorError = false;
 	            var _iteratorError = undefined;
-
+	
 	            try {
 	                for (var _iterator = this._timelineCallbacks[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                    var callback = _step.value;
-
+	
 	                    if (callback.func === func) {
 	                        toRemove.push(callback);
 	                    }
@@ -213,15 +214,15 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            var _iteratorNormalCompletion2 = true;
 	            var _didIteratorError2 = false;
 	            var _iteratorError2 = undefined;
-
+	
 	            try {
 	                for (var _iterator2 = toRemove[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	                    var callback = _step2.value;
-
+	
 	                    var index = this._timelineCallbacks.indexOf(callback);
 	                    this._timelineCallbacks.splice(index, 1);
 	                }
@@ -240,7 +241,7 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        /**
 	        * Regsiter a callback to listen to one of the following events: "stalled", "update", "ended"
 	        *
@@ -264,7 +265,7 @@ var VideoContext =
 	            if (!this._callbacks.has(type)) return false;
 	            this._callbacks.get(type).push(func);
 	        }
-
+	
 	        /**
 	        * Remove a previously registed callback
 	        *
@@ -289,11 +290,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion3 = true;
 	            var _didIteratorError3 = false;
 	            var _iteratorError3 = undefined;
-
+	
 	            try {
 	                for (var _iterator3 = this._callbacks.values()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 	                    var funcArray = _step3.value;
-
+	
 	                    var index = funcArray.indexOf(func);
 	                    if (index !== -1) {
 	                        funcArray.splice(index, 1);
@@ -314,7 +315,7 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return false;
 	        }
 	    }, {
@@ -324,11 +325,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion4 = true;
 	            var _didIteratorError4 = false;
 	            var _iteratorError4 = undefined;
-
+	
 	            try {
 	                for (var _iterator4 = funcArray[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	                    var func = _step4.value;
-
+	
 	                    func(this._currentTime);
 	                }
 	            } catch (err) {
@@ -346,7 +347,7 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        /**
 	        * Get the canvas that the VideoContext is using.
 	        *
@@ -355,7 +356,7 @@ var VideoContext =
 	        */
 	    }, {
 	        key: "play",
-
+	
 	        /**
 	        * Start the VideoContext playing
 	        * @example
@@ -372,7 +373,7 @@ var VideoContext =
 	            this._state = VideoContext.STATE.PLAYING;
 	            return true;
 	        }
-
+	
 	        /**
 	        * Pause playback of the VideoContext
 	        * @example
@@ -393,7 +394,7 @@ var VideoContext =
 	            this._state = VideoContext.STATE.PAUSED;
 	            return true;
 	        }
-
+	
 	        /**
 	        * Create a new node representing a video source
 	        *
@@ -416,12 +417,12 @@ var VideoContext =
 	            var sourceOffset = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	            var preloadTime = arguments.length <= 2 || arguments[2] === undefined ? 4 : arguments[2];
 	            var videoElementAttributes = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
-
+	
 	            var videoNode = new _SourceNodesVideonodeJs2["default"](src, this._gl, this._renderGraph, this._currentTime, this._playbackRate, sourceOffset, preloadTime, videoElementAttributes);
 	            this._sourceNodes.push(videoNode);
 	            return videoNode;
 	        }
-
+	
 	        /**
 	        * Create a new node representing an image source
 	        *
@@ -443,12 +444,12 @@ var VideoContext =
 	        value: function createImageSourceNode(src) {
 	            var sourceOffset = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	            var preloadTime = arguments.length <= 2 || arguments[2] === undefined ? 4 : arguments[2];
-
+	
 	            var imageNode = new _SourceNodesImagenodeJs2["default"](src, this._gl, this._renderGraph, this._currentTime, preloadTime);
 	            this._sourceNodes.push(imageNode);
 	            return imageNode;
 	        }
-
+	
 	        /**
 	        * Create a new node representing a canvas source
 	        *
@@ -459,12 +460,12 @@ var VideoContext =
 	        value: function createCanvasSourceNode(canvas) {
 	            var sourceOffset = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	            var preloadTime = arguments.length <= 2 || arguments[2] === undefined ? 4 : arguments[2];
-
+	
 	            var canvasNode = new _SourceNodesCanvasnodeJs2["default"](canvas, this._gl, this._renderGraph, this._currentTime, preloadTime);
 	            this._sourceNodes.push(canvasNode);
 	            return canvasNode;
 	        }
-
+	
 	        /**
 	        * Create a new effect node.
 	        * @return {EffectNode} A new effect node created from the passed definition
@@ -476,7 +477,7 @@ var VideoContext =
 	            this._processingNodes.push(effectNode);
 	            return effectNode;
 	        }
-
+	
 	        /**
 	        * Create a new compositiing node.
 	        *
@@ -546,7 +547,7 @@ var VideoContext =
 	            this._processingNodes.push(compositingNode);
 	            return compositingNode;
 	        }
-
+	
 	        /**
 	        * Create a new transition node.
 	        *
@@ -643,12 +644,38 @@ var VideoContext =
 	            }
 	            return false;
 	        }
+	
+	        /**
+	        * This allows manual calling of the update loop of the videoContext. 
+	        *
+	        * @param {Number} dt - The difference in seconds between this and the previous calling of update.
+	        * @example
+	        *
+	        * var canvasElement = document.getElemenyById("canvas");
+	        * var ctx = new VideoContext(canvasElement, undefined, {"manualUpdate" : true});
+	        * 
+	        * var previousTime;
+	        * function update(time){
+	        *     if (previousTime === undefined) previousTime = time;
+	        *     var dt = (time - previousTime)/1000;
+	        *     ctx.update(dt);
+	        *     previousTime = time;
+	        *     requestAnimationFrame(update);
+	        * }
+	        * update();
+	        *
+	        */
+	    }, {
+	        key: "update",
+	        value: function update(dt) {
+	            this._update(dt);
+	        }
 	    }, {
 	        key: "_update",
 	        value: function _update(dt) {
 	            if (this._state === VideoContext.STATE.PLAYING || this._state === VideoContext.STATE.STALLED || this._state === VideoContext.STATE.PAUSED) {
 	                this._callCallbacks("update");
-
+	
 	                if (this._state !== VideoContext.STATE.PAUSED) {
 	                    if (this._isStalled()) {
 	                        this._callCallbacks("stalled");
@@ -657,25 +684,25 @@ var VideoContext =
 	                        this._state = VideoContext.STATE.PLAYING;
 	                    }
 	                }
-
+	
 	                if (this._state === VideoContext.STATE.PLAYING) {
 	                    //Handle timeline callbacks.
 	                    var activeCallbacks = new Map();
 	                    var _iteratorNormalCompletion5 = true;
 	                    var _didIteratorError5 = false;
 	                    var _iteratorError5 = undefined;
-
+	
 	                    try {
 	                        for (var _iterator5 = this._timelineCallbacks[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	                            var callback = _step5.value;
-
+	
 	                            if (callback.time >= this.currentTime && callback.time < this._currentTime + dt * this._playbackRate) {
 	                                //group the callbacks by time
 	                                if (!activeCallbacks.has(callback.time)) activeCallbacks.set(callback.time, []);
 	                                activeCallbacks.get(callback.time).push(callback);
 	                            }
 	                        }
-
+	
 	                        //Sort the groups of callbacks by the times of the groups
 	                    } catch (err) {
 	                        _didIteratorError5 = true;
@@ -691,20 +718,20 @@ var VideoContext =
 	                            }
 	                        }
 	                    }
-
+	
 	                    var timeIntervals = Array.from(activeCallbacks.keys());
 	                    timeIntervals.sort(function (a, b) {
 	                        return a - b;
 	                    });
-
+	
 	                    var _iteratorNormalCompletion6 = true;
 	                    var _didIteratorError6 = false;
 	                    var _iteratorError6 = undefined;
-
+	
 	                    try {
 	                        for (var _iterator6 = timeIntervals[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
 	                            var t = _step6.value;
-
+	
 	                            var callbacks = activeCallbacks.get(t);
 	                            callbacks.sort(function (a, b) {
 	                                return a.ordering - b.ordering;
@@ -712,11 +739,11 @@ var VideoContext =
 	                            var _iteratorNormalCompletion7 = true;
 	                            var _didIteratorError7 = false;
 	                            var _iteratorError7 = undefined;
-
+	
 	                            try {
 	                                for (var _iterator7 = callbacks[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
 	                                    var callback = _step7.value;
-
+	
 	                                    callback.func();
 	                                }
 	                            } catch (err) {
@@ -734,7 +761,7 @@ var VideoContext =
 	                                }
 	                            }
 	                        }
-
+	
 	                        // activeCallbacks.sort(function(a, b) {
 	                        //     return a.ordering - b.ordering;
 	                        // });
@@ -755,18 +782,18 @@ var VideoContext =
 	                            }
 	                        }
 	                    }
-
+	
 	                    this._currentTime += dt * this._playbackRate;
 	                    if (this._currentTime > this.duration && this._endOnLastSourceEnd) {
 	                        this._callCallbacks("ended");
 	                        this._state = VideoContext.STATE.ENDED;
 	                    }
 	                }
-
+	
 	                for (var i = 0; i < this._sourceNodes.length; i++) {
 	                    var sourceNode = this._sourceNodes[i];
 	                    sourceNode._update(this._currentTime);
-
+	
 	                    if (this._state === VideoContext.STATE.STALLED) {
 	                        if (sourceNode._isReady() && sourceNode._state === _SourceNodesSourcenodeJs.SOURCENODESTATE.playing) sourceNode._pause();
 	                    }
@@ -777,7 +804,7 @@ var VideoContext =
 	                        if (sourceNode._state === _SourceNodesSourcenodeJs.SOURCENODESTATE.paused) sourceNode._play();
 	                    }
 	                }
-
+	
 	                /*
 	                * Itterate the directed acyclic graph using Khan's algorithm (KHAAAAAN!).
 	                *
@@ -793,18 +820,18 @@ var VideoContext =
 	                var sortedNodes = [];
 	                var connections = this._renderGraph.connections.slice();
 	                var nodes = _rendergraphJs2["default"].getInputlessNodes(connections);
-
+	
 	                while (nodes.length > 0) {
 	                    var node = nodes.pop();
 	                    sortedNodes.push(node);
 	                    var _iteratorNormalCompletion8 = true;
 	                    var _didIteratorError8 = false;
 	                    var _iteratorError8 = undefined;
-
+	
 	                    try {
 	                        for (var _iterator8 = _rendergraphJs2["default"].outputEdgesFor(node, connections)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
 	                            var edge = _step8.value;
-
+	
 	                            var index = connections.indexOf(edge);
 	                            if (index > -1) connections.splice(index, 1);
 	                            if (_rendergraphJs2["default"].inputEdgesFor(edge.destination, connections).length === 0) {
@@ -826,21 +853,21 @@ var VideoContext =
 	                        }
 	                    }
 	                }
-
+	
 	                var _iteratorNormalCompletion9 = true;
 	                var _didIteratorError9 = false;
 	                var _iteratorError9 = undefined;
-
+	
 	                try {
 	                    for (var _iterator9 = sortedNodes[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
 	                        var node = _step9.value;
-
+	
 	                        if (this._sourceNodes.indexOf(node) === -1) {
 	                            node._update(this._currentTime);
 	                            node._render();
 	                        }
 	                    }
-
+	
 	                    /*for (let node of this._processingNodes) {
 	                        node._update(this._currentTime);
 	                        node._render();
@@ -867,7 +894,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._canvas;
 	        }
-
+	
 	        /**
 	        * Get the current state.
 	        *
@@ -885,7 +912,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._state;
 	        }
-
+	
 	        /**
 	        * Set the progress through the internal timeline.
 	        * Setting this can be used as a way to implement a scrubaable timeline.
@@ -911,7 +938,7 @@ var VideoContext =
 	            if (typeof currentTime === "string" || currentTime instanceof String) {
 	                currentTime = parseFloat(currentTime);
 	            }
-
+	
 	            for (var i = 0; i < this._sourceNodes.length; i++) {
 	                this._sourceNodes[i]._seek(currentTime);
 	            }
@@ -920,7 +947,7 @@ var VideoContext =
 	            }
 	            this._currentTime = currentTime;
 	        },
-
+	
 	        /**
 	        * Get how far through the internal timeline has been played.
 	        *
@@ -941,7 +968,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._currentTime;
 	        }
-
+	
 	        /**
 	        * Get the time at which the last node in the current internal timeline finishes playing.
 	        *
@@ -972,7 +999,7 @@ var VideoContext =
 	            }
 	            return maxTime;
 	        }
-
+	
 	        /**
 	        * Get the final node in the render graph which represents the canvas to display content on to.
 	        *
@@ -993,7 +1020,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._destinationNode;
 	        }
-
+	
 	        /**
 	        * Set the playback rate of the VideoContext instance.
 	        * This will alter the playback speed of all media elements played through the VideoContext.
@@ -1016,11 +1043,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion10 = true;
 	            var _didIteratorError10 = false;
 	            var _iteratorError10 = undefined;
-
+	
 	            try {
 	                for (var _iterator10 = this._sourceNodes[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
 	                    var node = _step10.value;
-
+	
 	                    if (node.constructor.name === "VideoNode") node._globalPlaybackRate = rate;
 	                }
 	            } catch (err) {
@@ -1037,10 +1064,10 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            this._playbackRate = rate;
 	        },
-
+	
 	        /**
 	        *  Return the current playbackRate of the video context.
 	        * @return {number} A value representing the playbackRate. 1.0 by default.
@@ -1051,7 +1078,7 @@ var VideoContext =
 	    }], [{
 	        key: "DEFINITIONS",
 	        get: function get() {
-
+	
 	            var aaf_video_scale = {
 	                title: "AAF Video Scale Effect",
 	                description: "A scale effect based on the AAF spec.",
@@ -1084,7 +1111,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var aaf_video_position = {
 	                title: "AAF Video Position Effect",
 	                description: "A position effect based on the AAF spec.",
@@ -1117,7 +1144,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var aaf_video_crop = {
 	                title: "AAF Video Crop Effect",
 	                description: "A crop effect based on the AAF spec.",
@@ -1153,7 +1180,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var aaf_video_flip = {
 	                title: "AAF Video Scale Effect",
 	                description: "A flip effect based on the AAF spec. Mirrors the image in the x-axis",
@@ -1177,7 +1204,7 @@ var VideoContext =
 	                properties: {},
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var aaf_video_flop = {
 	                title: "AAF Video Scale Effect",
 	                description: "A flop effect based on the AAF spec. Mirrors the image in the y-axis",
@@ -1201,7 +1228,7 @@ var VideoContext =
 	                properties: {},
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var crossfade = {
 	                title: "Cross-Fade",
 	                description: "A cross-fade effect. Typically used as a transistion.",
@@ -1238,7 +1265,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image_a", "u_image_b"]
 	            };
-
+	
 	            var combine = {
 	                title: "Combine",
 	                description: "A basic effect which renders the input to the output, Typically used as a combine node for layering up media with alpha transparency.",
@@ -1265,7 +1292,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var colorThreshold = {
 	                title: "Color Threshold",
 	                description: "Turns all pixels with a greater value than the specified threshold transparent.",
@@ -1297,7 +1324,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var monochrome = {
 	                title: "Monochrome",
 	                description: "Change images to a single chroma (e.g can be used to make a black & white filter). Input color mix and output color mix can be adjusted.",
@@ -1330,7 +1357,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var hoizontalBlur = {
 	                title: "Horizontal Blur",
 	                description: "A horizontal blur effect. Adpated from http://xissburg.com/faster-gaussian-blur-in-glsl/",
@@ -1386,7 +1413,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            var verticalBlur = {
 	                title: "Vertical Blur",
 	                description: "A vertical blur effect. Adpated from http://xissburg.com/faster-gaussian-blur-in-glsl/",
@@ -1442,7 +1469,7 @@ var VideoContext =
 	                },
 	                inputs: ["u_image"]
 	            };
-
+	
 	            return {
 	                CROSSFADE: crossfade,
 	                COMBINE: combine,
@@ -1458,10 +1485,10 @@ var VideoContext =
 	            };
 	        }
 	    }]);
-
+	
 	    return VideoContext;
 	})();
-
+	
 	exports["default"] = VideoContext;
 	VideoContext.STATE = {};
 	VideoContext.STATE.PLAYING = 0;
@@ -1469,7 +1496,7 @@ var VideoContext =
 	VideoContext.STATE.STALLED = 2;
 	VideoContext.STATE.ENDED = 3;
 	VideoContext.STATE.BROKEN = 4;
-
+	
 	VideoContext.visualiseVideoContextTimeline = _utilsJs.visualiseVideoContextTimeline;
 	VideoContext.visualiseVideoContextGraph = _utilsJs.visualiseVideoContextGraph;
 	VideoContext.createControlFormForNode = _utilsJs.createControlFormForNode;
@@ -1482,43 +1509,43 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _set = function set(object, property, value, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent !== null) { set(parent, property, value, receiver); } } else if ("value" in desc && desc.writable) { desc.value = value; } else { var setter = desc.set; if (setter !== undefined) { setter.call(receiver, value); } } return value; };
-
+	
 	var _get = function get(_x5, _x6, _x7) { var _again = true; _function: while (_again) { var object = _x5, property = _x6, receiver = _x7; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x5 = parent; _x6 = property; _x7 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _sourcenode = __webpack_require__(2);
-
+	
 	var _sourcenode2 = _interopRequireDefault(_sourcenode);
-
+	
 	var VideoNode = (function (_SourceNode) {
 	    _inherits(VideoNode, _SourceNode);
-
+	
 	    /**
 	    * Initialise an instance of a VideoNode.
 	    * This should not be called directly, but created through a call to videoContext.createVideoNode();
 	    */
-
+	
 	    function VideoNode(src, gl, renderGraph, currentTime) {
 	        var globalPlaybackRate = arguments.length <= 4 || arguments[4] === undefined ? 1.0 : arguments[4];
 	        var sourceOffset = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
 	        var preloadTime = arguments.length <= 6 || arguments[6] === undefined ? 4 : arguments[6];
 	        var attributes = arguments.length <= 7 || arguments[7] === undefined ? {} : arguments[7];
-
+	
 	        _classCallCheck(this, VideoNode);
-
+	
 	        _get(Object.getPrototypeOf(VideoNode.prototype), "constructor", this).call(this, src, gl, renderGraph, currentTime);
 	        this._preloadTime = preloadTime;
 	        this._sourceOffset = sourceOffset;
@@ -1532,17 +1559,17 @@ var VideoContext =
 	            this._loopElement = this._attributes.loop;
 	        }
 	    }
-
+	
 	    _createClass(VideoNode, [{
 	        key: "_load",
 	        value: function _load() {
 	            _get(Object.getPrototypeOf(VideoNode.prototype), "_load", this).call(this);
 	            if (this._element !== undefined) {
-
+	
 	                for (var key in this._attributes) {
 	                    this._element[key] = this._attributes[key];
 	                }
-
+	
 	                if (this._element.readyState > 3 && !this._element.seeking) {
 	                    if (this._loopElement === false) {
 	                        if (this._stopTime === Infinity || this._stopTime == undefined) {
@@ -1554,7 +1581,7 @@ var VideoContext =
 	                        this._triggerCallbacks("loaded");
 	                        this._playbackRateUpdated = true;
 	                    }
-
+	
 	                    this._ready = true;
 	                } else {
 	                    this._ready = false;
@@ -1567,7 +1594,7 @@ var VideoContext =
 	                this._element.setAttribute("webkit-playsinline", "");
 	                this._element.src = this._elementURL;
 	                this._playbackRateUpdated = true;
-
+	
 	                for (var _key in this._attributes) {
 	                    this._element[_key] = this._attributes[_key];
 	                }
@@ -1611,9 +1638,9 @@ var VideoContext =
 	                    this._triggerCallbacks("ended");
 	                }
 	            }
-
+	
 	            if (this._startTime - this._currentTime < this._preloadTime && this._state !== _sourcenode.SOURCENODESTATE.waiting && this._state !== _sourcenode.SOURCENODESTATE.ended) this._load();
-
+	
 	            if (this._state === _sourcenode.SOURCENODESTATE.playing) {
 	                if (this._playbackRateUpdated) {
 	                    this._element.playbackRate = this._globalPlaybackRate * this._playbackRate;
@@ -1675,10 +1702,10 @@ var VideoContext =
 	            return this._stretchPaused;
 	        }
 	    }]);
-
+	
 	    return VideoNode;
 	})(_sourcenode2["default"]);
-
+	
 	exports["default"] = VideoNode;
 	module.exports = exports["default"];
 
@@ -1688,40 +1715,40 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _utilsJs = __webpack_require__(3);
-
+	
 	var _graphnode = __webpack_require__(4);
-
+	
 	var _graphnode2 = _interopRequireDefault(_graphnode);
-
+	
 	var STATE = { "waiting": 0, "sequenced": 1, "playing": 2, "paused": 3, "ended": 4 };
-
+	
 	var SourceNode = (function (_GraphNode) {
 	    _inherits(SourceNode, _GraphNode);
-
+	
 	    /**
 	    * Initialise an instance of a SourceNode.
 	    * This is the base class for other Nodes which generate media to be passed into the processing pipeline.
 	    */
-
+	
 	    function SourceNode(src, gl, renderGraph, currentTime) {
 	        _classCallCheck(this, SourceNode);
-
+	
 	        _get(Object.getPrototypeOf(SourceNode.prototype), "constructor", this).call(this, gl, renderGraph, [], true);
 	        this._element = undefined;
 	        this._elementURL = undefined;
@@ -1734,7 +1761,7 @@ var VideoContext =
 	            this._element = src;
 	            this._isResponsibleForElementLifeCycle = false;
 	        }
-
+	
 	        this._state = STATE.waiting;
 	        this._currentTime = currentTime;
 	        this._startTime = NaN;
@@ -1746,7 +1773,7 @@ var VideoContext =
 	        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
 	        this._callbacks = [];
 	    }
-
+	
 	    /**
 	    * Returns the state of the node.
 	    * 0 - Waiting, start() has not been called on it yet.
@@ -1767,7 +1794,7 @@ var VideoContext =
 	    * ctx.paused();
 	    * console.log(videoNode.state); //will output 3 (for paused)
 	    */
-
+	
 	    _createClass(SourceNode, [{
 	        key: "_load",
 	        value: function _load() {
@@ -1782,7 +1809,7 @@ var VideoContext =
 	            this._triggerCallbacks("destroy");
 	            this._loadCalled = false;
 	        }
-
+	
 	        /**
 	        * Register callbacks against one of these events: "load", "destory", "seek", "pause", "play", "ended", "durationchange", "loaded"
 	        *
@@ -1803,7 +1830,7 @@ var VideoContext =
 	        value: function registerCallback(type, func) {
 	            this._callbacks.push({ type: type, func: func });
 	        }
-
+	
 	        /**
 	        * Remove callback.
 	        *
@@ -1826,11 +1853,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion = true;
 	            var _didIteratorError = false;
 	            var _iteratorError = undefined;
-
+	
 	            try {
 	                for (var _iterator = this._callbacks[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                    var callback = _step.value;
-
+	
 	                    if (func === undefined) {
 	                        toRemove.push(callback);
 	                    } else if (callback.func === func) {
@@ -1851,15 +1878,15 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            var _iteratorNormalCompletion2 = true;
 	            var _didIteratorError2 = false;
 	            var _iteratorError2 = undefined;
-
+	
 	            try {
 	                for (var _iterator2 = toRemove[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	                    var callback = _step2.value;
-
+	
 	                    var index = this._callbacks.indexOf(callback);
 	                    this._callbacks.splice(index, 1);
 	                }
@@ -1884,11 +1911,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion3 = true;
 	            var _didIteratorError3 = false;
 	            var _iteratorError3 = undefined;
-
+	
 	            try {
 	                for (var _iterator3 = this._callbacks[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 	                    var callback = _step3.value;
-
+	
 	                    if (callback.type === type) {
 	                        if (data !== undefined) {
 	                            callback.func(this, data);
@@ -1912,7 +1939,7 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        /**
 	        * Start playback at VideoContext.currentTime plus passed time. If passed time is negative, will play as soon as possible.
 	        *
@@ -1926,12 +1953,12 @@ var VideoContext =
 	                console.debug("SourceNode is has already been sequenced. Can't sequence twice.");
 	                return false;
 	            }
-
+	
 	            this._startTime = this._currentTime + time;
 	            this._state = STATE.sequenced;
 	            return true;
 	        }
-
+	
 	        /**
 	        * Start playback at an absolute time ont the VideoContext's timeline.
 	        *
@@ -1949,7 +1976,7 @@ var VideoContext =
 	            this._state = STATE.sequenced;
 	            return true;
 	        }
-
+	
 	        /**
 	        * Stop playback at VideoContext.currentTime plus passed time. If passed time is negative, will play as soon as possible.
 	        *
@@ -1975,7 +2002,7 @@ var VideoContext =
 	            this._triggerCallbacks("durationchange", this.duration);
 	            return true;
 	        }
-
+	
 	        /**
 	        * Stop playback at an absolute time ont the VideoContext's timeline.
 	        *
@@ -2005,7 +2032,7 @@ var VideoContext =
 	        key: "_seek",
 	        value: function _seek(time) {
 	            this._triggerCallbacks("seek", time);
-
+	
 	            if (this._state === STATE.waiting) return;
 	            if (time < this._startTime) {
 	                (0, _utilsJs.clearTexture)(this._gl, this._texture);
@@ -2026,7 +2053,7 @@ var VideoContext =
 	        key: "_pause",
 	        value: function _pause() {
 	            this._triggerCallbacks("pause");
-
+	
 	            if (this._state === STATE.playing) {
 	                this._state = STATE.paused;
 	            }
@@ -2035,7 +2062,7 @@ var VideoContext =
 	        key: "_play",
 	        value: function _play() {
 	            this._triggerCallbacks("play");
-
+	
 	            if (this._state === STATE.paused) {
 	                this._state = STATE.playing;
 	            }
@@ -2053,44 +2080,44 @@ var VideoContext =
 	        value: function _update(currentTime) {
 	            this._rendered = true;
 	            var timeDelta = currentTime - this._currentTime;
-
+	
 	            //update the current time
 	            this._currentTime = currentTime;
-
+	
 	            //update the state
 	            if (this._state === STATE.waiting || this._state === STATE.ended) return false;
-
+	
 	            this._triggerCallbacks("render", currentTime);
-
+	
 	            if (currentTime < this._startTime) {
 	                (0, _utilsJs.clearTexture)(this._gl, this._texture);
 	                this._state = STATE.sequenced;
 	            }
-
+	
 	            if (currentTime >= this._startTime && this._state !== STATE.paused) {
 	                if (this._state !== STATE.playing) this._triggerCallbacks("play");
 	                this._state = STATE.playing;
 	            }
-
+	
 	            if (currentTime >= this._stopTime) {
 	                (0, _utilsJs.clearTexture)(this._gl, this._texture);
 	                this._triggerCallbacks("ended");
 	                this._state = STATE.ended;
 	            }
-
+	
 	            //update this source nodes texture
 	            if (this._element === undefined || this._ready === false) return true;
-
+	
 	            if (this._state === STATE.playing) {
 	                (0, _utilsJs.updateTexture)(this._gl, this._texture, this._element);
 	                if (this._stretchPaused) {
 	                    this._stopTime += timeDelta;
 	                }
 	            }
-
+	
 	            return true;
 	        }
-
+	
 	        /**
 	        * Clear any timeline state the node currently has, this puts the node in the "waiting" state, as if neither start nor stop had been called.
 	        */
@@ -2106,7 +2133,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._state;
 	        }
-
+	
 	        /**
 	        * Returns the underlying DOM element which represents this source node.
 	        * Note: If a source node is created with a url rather than passing in an existing element then this will return undefined until the source node preloads the element.
@@ -2139,7 +2166,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._element;
 	        }
-
+	
 	        /**
 	        * Returns the duration of the node on a timeline. If no start time is set will return undefiend, if no stop time is set will return Infinity.
 	        *
@@ -2168,10 +2195,10 @@ var VideoContext =
 	            return this._stretchPaused;
 	        }
 	    }]);
-
+	
 	    return SourceNode;
 	})(_graphnode2["default"]);
-
+	
 	exports["default"] = SourceNode;
 	exports.SOURCENODESTATE = STATE;
 
@@ -2180,7 +2207,7 @@ var VideoContext =
 /***/ function(module, exports) {
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
-
+	
 	/*
 	* Utility function to compile a WebGL Vertex or Fragment shader.
 	* 
@@ -2192,10 +2219,13 @@ var VideoContext =
 	*
 	*/
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
 	exports.compileShader = compileShader;
 	exports.createShaderProgram = createShaderProgram;
 	exports.createElementTexutre = createElementTexutre;
@@ -2205,7 +2235,9 @@ var VideoContext =
 	exports.visualiseVideoContextGraph = visualiseVideoContextGraph;
 	exports.createSigmaGraphDataFromRenderGraph = createSigmaGraphDataFromRenderGraph;
 	exports.visualiseVideoContextTimeline = visualiseVideoContextTimeline;
-
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
 	function compileShader(gl, shaderSource, shaderType) {
 	    var shader = gl.createShader(shaderType);
 	    gl.shaderSource(shader, shaderSource);
@@ -2216,7 +2248,7 @@ var VideoContext =
 	    }
 	    return shader;
 	}
-
+	
 	/*
 	* Create a shader program from a passed vertex and fragment shader source string.
 	* 
@@ -2226,16 +2258,16 @@ var VideoContext =
 	*
 	* @return {WebGLProgram} A compiled & linkde shader program.
 	*/
-
+	
 	function createShaderProgram(gl, vertexShaderSource, fragmentShaderSource) {
 	    var vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
 	    var fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
 	    var program = gl.createProgram();
-
+	
 	    gl.attachShader(program, vertexShader);
 	    gl.attachShader(program, fragmentShader);
 	    gl.linkProgram(program);
-
+	
 	    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 	        throw { "error": 4, "msg": "Can't link shader program for track", toString: function toString() {
 	                return this.msg;
@@ -2243,7 +2275,7 @@ var VideoContext =
 	    }
 	    return program;
 	}
-
+	
 	function createElementTexutre(gl) {
 	    var texture = gl.createTexture();
 	    gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -2255,37 +2287,37 @@ var VideoContext =
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	    //Initialise the texture untit to clear.
 	    //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, type);
-
+	
 	    return texture;
 	}
-
+	
 	function updateTexture(gl, texture, element) {
 	    gl.bindTexture(gl.TEXTURE_2D, texture);
 	    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
 	}
-
+	
 	function clearTexture(gl, texture) {
 	    gl.bindTexture(gl.TEXTURE_2D, texture);
 	    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
 	}
-
+	
 	function createControlFormForNode(node, nodeName) {
 	    var rootDiv = document.createElement("div");
-
+	
 	    if (nodeName !== undefined) {
 	        var title = document.createElement("h2");
 	        title.innerHTML = nodeName;
 	        rootDiv.appendChild(title);
 	    }
-
+	
 	    var _loop = function (propertyName) {
 	        var propertyParagraph = document.createElement("p");
 	        var propertyTitleHeader = document.createElement("h3");
 	        propertyTitleHeader.innerHTML = propertyName;
 	        propertyParagraph.appendChild(propertyTitleHeader);
-
+	
 	        var propertyValue = node._properties[propertyName].value;
 	        if (typeof propertyValue === "number") {
 	            (function () {
@@ -2295,14 +2327,14 @@ var VideoContext =
 	                range.setAttribute("max", "1");
 	                range.setAttribute("step", "0.01");
 	                range.setAttribute("value", propertyValue, toString());
-
+	
 	                var number = document.createElement("input");
 	                number.setAttribute("type", "number");
 	                number.setAttribute("min", "0");
 	                number.setAttribute("max", "1");
 	                number.setAttribute("step", "0.01");
 	                number.setAttribute("value", propertyValue, toString());
-
+	
 	                var mouseDown = false;
 	                range.onmousedown = function () {
 	                    mouseDown = true;
@@ -2335,14 +2367,14 @@ var VideoContext =
 	                range.setAttribute("max", "1");
 	                range.setAttribute("step", "0.01");
 	                range.setAttribute("value", propertyValue[i], toString());
-
+	
 	                var number = document.createElement("input");
 	                number.setAttribute("type", "number");
 	                number.setAttribute("min", "0");
 	                number.setAttribute("max", "1");
 	                number.setAttribute("step", "0.01");
 	                number.setAttribute("value", propertyValue, toString());
-
+	
 	                var index = i;
 	                var mouseDown = false;
 	                range.onmousedown = function () {
@@ -2361,7 +2393,7 @@ var VideoContext =
 	                    node[propertyName][index] = parseFloat(range.value);
 	                    number.value = range.value;
 	                };
-
+	
 	                number.onchange = function () {
 	                    node[propertyName][index] = parseFloat(number.value);
 	                    range.value = number.value;
@@ -2369,38 +2401,38 @@ var VideoContext =
 	                propertyParagraph.appendChild(range);
 	                propertyParagraph.appendChild(number);
 	            };
-
+	
 	            for (i = 0; i < propertyValue.length; i++) {
 	                _loop2();
 	            }
 	        }
-
+	
 	        rootDiv.appendChild(propertyParagraph);
 	    };
-
+	
 	    for (var propertyName in node._properties) {
 	        var i;
-
+	
 	        _loop(propertyName);
 	    }
 	    return rootDiv;
 	}
-
+	
 	function calculateNodeDepthFromDestination(videoContext) {
 	    var destination = videoContext.destination;
 	    var depthMap = new Map();
 	    depthMap.set(destination, 0);
-
+	
 	    function itterateBackwards(node) {
 	        var depth = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	        var _iteratorNormalCompletion = true;
 	        var _didIteratorError = false;
 	        var _iteratorError = undefined;
-
+	
 	        try {
 	            for (var _iterator = node.inputs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                var n = _step.value;
-
+	
 	                var d = depth + 1;
 	                if (depthMap.has(n)) {
 	                    if (d > depthMap.get(n)) {
@@ -2426,42 +2458,42 @@ var VideoContext =
 	            }
 	        }
 	    }
-
+	
 	    itterateBackwards(destination);
 	    return depthMap;
 	}
-
+	
 	function visualiseVideoContextGraph(videoContext, canvas) {
 	    var ctx = canvas.getContext("2d");
 	    var w = canvas.width;
 	    var h = canvas.height;
 	    ctx.clearRect(0, 0, w, h);
-
+	
 	    var nodeDepths = calculateNodeDepthFromDestination(videoContext);
 	    var depths = nodeDepths.values();
 	    depths = Array.from(depths).sort(function (a, b) {
 	        return b - a;
 	    });
 	    var maxDepth = depths[0];
-
+	
 	    var xStep = w / (maxDepth + 1);
-
+	
 	    var nodeHeight = h / videoContext._sourceNodes.length / 3;
 	    var nodeWidth = nodeHeight * 1.618;
-
+	
 	    function calculateNodePos(node, nodeDepths, xStep, nodeHeight) {
 	        var depth = nodeDepths.get(node);
 	        nodeDepths.values();
-
+	
 	        var count = 0;
 	        var _iteratorNormalCompletion2 = true;
 	        var _didIteratorError2 = false;
 	        var _iteratorError2 = undefined;
-
+	
 	        try {
 	            for (var _iterator2 = nodeDepths[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	                var nodeDepth = _step2.value;
-
+	
 	                if (nodeDepth[0] === node) break;
 	                if (nodeDepth[1] === depth) count += 1;
 	            }
@@ -2479,14 +2511,14 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        return { x: xStep * nodeDepths.get(node), y: nodeHeight * 1.5 * count + 50 };
 	    }
-
+	
 	    // "video":["#572A72", "#3C1255"],
 	    // "image":["#7D9F35", "#577714"],
 	    // "canvas":["#AA9639", "#806D15"]
-
+	
 	    for (var i = 0; i < videoContext._renderGraph.connections.length; i++) {
 	        var conn = videoContext._renderGraph.connections[i];
 	        var source = calculateNodePos(conn.source, nodeDepths, xStep, nodeHeight);
@@ -2500,35 +2532,35 @@ var VideoContext =
 	            var y2 = destination.y + nodeHeight / 2;
 	            var dx = x2 - x1;
 	            var dy = y2 - y1;
-
+	
 	            var angle = Math.PI / 2 - Math.atan2(dx, dy);
-
+	
 	            var distance = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-
+	
 	            var midX = Math.min(x1, x2) + (Math.max(x1, x2) - Math.min(x1, x2)) / 2;
 	            var midY = Math.min(y1, y2) + (Math.max(y1, y2) - Math.min(y1, y2)) / 2;
-
+	
 	            var testX = Math.cos(angle + Math.PI / 2) * distance / 1.5 + midX;
 	            var testY = Math.sin(angle + Math.PI / 2) * distance / 1.5 + midY;
 	            // console.log(testX, testY);
-
+	
 	            ctx.arc(testX, testY, distance / 1.2, angle - Math.PI + 0.95, angle - 0.95);
-
+	
 	            //ctx.arcTo(source.x + nodeWidth/2 ,source.y + nodeHeight/2,destination.x + nodeWidth/2,destination.y + nodeHeight/2,100);
 	            //ctx.lineTo(midX, midY);
 	            ctx.stroke();
 	            //ctx.endPath();
 	        }
 	    }
-
+	
 	    var _iteratorNormalCompletion3 = true;
 	    var _didIteratorError3 = false;
 	    var _iteratorError3 = undefined;
-
+	
 	    try {
 	        for (var _iterator3 = nodeDepths.keys()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 	            var node = _step3.value;
-
+	
 	            var pos = calculateNodePos(node, nodeDepths, xStep, nodeHeight);
 	            var color = "#AA9639";
 	            var text = "";
@@ -2555,7 +2587,7 @@ var VideoContext =
 	            ctx.fillStyle = color;
 	            ctx.fillRect(pos.x, pos.y, nodeWidth, nodeHeight);
 	            ctx.fill();
-
+	
 	            ctx.fillStyle = "#000";
 	            ctx.textAlign = "center";
 	            ctx.font = "10px Arial";
@@ -2576,12 +2608,12 @@ var VideoContext =
 	            }
 	        }
 	    }
-
+	
 	    return;
 	}
-
+	
 	function createSigmaGraphDataFromRenderGraph(videoContext) {
-
+	
 	    function idForNode(node) {
 	        if (videoContext._sourceNodes.indexOf(node) !== -1) {
 	            var _id = "source " + node.constructor.name + " " + videoContext._sourceNodes.indexOf(node);
@@ -2590,7 +2622,7 @@ var VideoContext =
 	        var id = "processor " + node.constructor.name + " " + videoContext._processingNodes.indexOf(node);
 	        return id;
 	    }
-
+	
 	    var graph = {
 	        nodes: [{
 	            id: idForNode(videoContext.destination),
@@ -2602,7 +2634,7 @@ var VideoContext =
 	        }],
 	        edges: []
 	    };
-
+	
 	    for (var i = 0; i < videoContext._sourceNodes.length; i++) {
 	        var sourceNode = videoContext._sourceNodes[i];
 	        var y = i * (1.0 / videoContext._sourceNodes.length);
@@ -2626,7 +2658,7 @@ var VideoContext =
 	            node: processingNode
 	        });
 	    }
-
+	
 	    for (var i = 0; i < videoContext._renderGraph.connections.length; i++) {
 	        var conn = videoContext._renderGraph.connections[i];
 	        graph.edges.push({
@@ -2635,24 +2667,26 @@ var VideoContext =
 	            "target": idForNode(conn.destination)
 	        });
 	    }
-
+	
 	    return graph;
 	}
-
+	
 	function visualiseVideoContextTimeline(videoContext, canvas, currentTime) {
 	    var ctx = canvas.getContext("2d");
 	    var w = canvas.width;
 	    var h = canvas.height;
 	    var trackHeight = h / videoContext._sourceNodes.length;
 	    var playlistDuration = videoContext.duration;
-
+	
+	    if (currentTime > playlistDuration && !videoContext.endOnLastSourceEnd) playlistDuration = currentTime;
+	
 	    if (videoContext.duration === Infinity) {
 	        var total = 0;
 	        for (var i = 0; i < videoContext._sourceNodes.length; i++) {
 	            var sourceNode = videoContext._sourceNodes[i];
 	            if (sourceNode._stopTime !== Infinity) total += sourceNode._stopTime;
 	        }
-
+	
 	        if (total > videoContext.currentTime) {
 	            playlistDuration = total + 5;
 	        } else {
@@ -2665,28 +2699,28 @@ var VideoContext =
 	        "image": ["#7D9F35", "#577714"],
 	        "canvas": ["#AA9639", "#806D15"]
 	    };
-
+	
 	    ctx.clearRect(0, 0, w, h);
 	    ctx.fillStyle = "#999";
-
+	
 	    var _iteratorNormalCompletion4 = true;
 	    var _didIteratorError4 = false;
 	    var _iteratorError4 = undefined;
-
+	
 	    try {
 	        for (var _iterator4 = videoContext._processingNodes[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	            var node = _step4.value;
-
+	
 	            if (node.constructor.name !== "TransitionNode") continue;
 	            for (var propertyName in node._transitions) {
 	                var _iteratorNormalCompletion5 = true;
 	                var _didIteratorError5 = false;
 	                var _iteratorError5 = undefined;
-
+	
 	                try {
 	                    for (var _iterator5 = node._transitions[propertyName][Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	                        var transition = _step5.value;
-
+	
 	                        var tW = (transition.end - transition.start) * pixelsPerSecond;
 	                        var tH = h;
 	                        var tX = transition.start * pixelsPerSecond;
@@ -2725,28 +2759,151 @@ var VideoContext =
 	            }
 	        }
 	    }
-
+	
 	    for (var i = 0; i < videoContext._sourceNodes.length; i++) {
 	        var sourceNode = videoContext._sourceNodes[i];
 	        var duration = sourceNode._stopTime - sourceNode._startTime;
 	        if (duration === Infinity) duration = videoContext.currentTime;
 	        var start = sourceNode._startTime;
-
+	
 	        var msW = duration * pixelsPerSecond;
 	        var msH = trackHeight;
 	        var msX = start * pixelsPerSecond;
 	        var msY = trackHeight * i;
 	        ctx.fillStyle = mediaSourceStyle.video[i % mediaSourceStyle.video.length];
-
+	
 	        ctx.fillRect(msX, msY, msW, msH);
 	        ctx.fill();
 	    }
-
+	
 	    if (currentTime !== undefined) {
 	        ctx.fillStyle = "#000";
 	        ctx.fillRect(currentTime * pixelsPerSecond, 0, 1, h);
 	    }
 	}
+	
+	var UpdateablesManager = (function () {
+	    function UpdateablesManager() {
+	        _classCallCheck(this, UpdateablesManager);
+	
+	        this._updateables = [];
+	        this._useWebworker = false;
+	        this._active = false;
+	        this._previousRAFTime = undefined;
+	        this._previousWorkerTime = undefined;
+	
+	        this._webWorkerString = "\
+	            var running = false;\
+	            function tick(){\
+	                postMessage(Date.now());\
+	                if (running){\
+	                    setTimeout(tick, 1000/20);\
+	                }\
+	            }\
+	            self.addEventListener('message',function(msg){\
+	                var data = msg.data;\
+	                if (data === 'start'){\
+	                    running = true;\
+	                    tick();\
+	                }\
+	                if (data === 'stop') running = false;\
+	            });";
+	        this._webWorker = undefined;
+	    }
+	
+	    _createClass(UpdateablesManager, [{
+	        key: "_initWebWorker",
+	        value: function _initWebWorker() {
+	            var _this = this;
+	
+	            window.URL = window.URL || window.webkitURL;
+	            var blob = new Blob([this._webWorkerString], { type: "application/javascript" });
+	            this._webWorker = new Worker(URL.createObjectURL(blob));
+	            this._webWorker.onmessage = function (msg) {
+	                var time = msg.data;
+	                _this._updateWorkerTime(time);
+	            };
+	        }
+	    }, {
+	        key: "_lostVisibility",
+	        value: function _lostVisibility() {
+	            this._previousWorkerTime = Date.now();
+	            this._useWebworker = true;
+	            if (!this._webWorker) {
+	                this._initWebWorker();
+	            }
+	            this._webWorker.postMessage("start");
+	        }
+	    }, {
+	        key: "_gainedVisibility",
+	        value: function _gainedVisibility() {
+	            this._useWebworker = false;
+	            this._previousRAFTime = undefined;
+	            if (this._webWorker) this._webWorker.postMessage("stop");
+	            requestAnimationFrame(this._updateRAFTime.bind(this));
+	        }
+	    }, {
+	        key: "_init",
+	        value: function _init() {
+	            var _this2 = this;
+	
+	            if (!window.Worker) return;
+	
+	            //If page visibility API not present fallback to using "focus" and "blur" event listeners.
+	            if (typeof document.hidden === "undefined") {
+	                window.addEventListener("focus", this._gainedVisibility.bind(this));
+	                window.addEventListener("blur", this._lostVisibility.bind(this));
+	                return;
+	            }
+	            //Otherwise we can use the visibility API to do the loose/gain focus properly
+	            document.addEventListener("visibilitychange", function () {
+	                if (document.hidden === true) {
+	                    _this2._lostVisibility();
+	                } else {
+	                    _this2._gainedVisibility();
+	                }
+	            }, false);
+	
+	            requestAnimationFrame(this._updateRAFTime.bind(this));
+	        }
+	    }, {
+	        key: "_updateWorkerTime",
+	        value: function _updateWorkerTime(time) {
+	            var dt = (time - this._previousWorkerTime) / 1000;
+	            if (dt !== 0) this._update(dt);
+	            this._previousWorkerTime = time;
+	        }
+	    }, {
+	        key: "_updateRAFTime",
+	        value: function _updateRAFTime(time) {
+	            if (this._previousRAFTime === undefined) this._previousRAFTime = time;
+	            var dt = (time - this._previousRAFTime) / 1000;
+	            if (dt !== 0) this._update(dt);
+	            this._previousRAFTime = time;
+	            if (!this._useWebworker) requestAnimationFrame(this._updateRAFTime.bind(this));
+	        }
+	    }, {
+	        key: "_update",
+	        value: function _update(dt) {
+	            for (var i = 0; i < this._updateables.length; i++) {
+	                this._updateables[i]._update(parseFloat(dt));
+	            }
+	        }
+	    }, {
+	        key: "register",
+	        value: function register(updateable) {
+	            this._updateables.push(updateable);
+	            if (this._active === false) {
+	                this._active = true;
+	                this._init();
+	            }
+	        }
+	    }]);
+	
+	    return UpdateablesManager;
+	})();
+
+	exports.UpdateablesManager = UpdateablesManager;
 
 /***/ },
 /* 4 */
@@ -2754,44 +2911,44 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	var GraphNode = (function () {
 	    /**
 	    * Base class from which all processing and source nodes are derrived.
 	    */
-
+	
 	    function GraphNode(gl, renderGraph, inputNames) {
 	        var limitConnections = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
-
+	
 	        _classCallCheck(this, GraphNode);
-
+	
 	        this._renderGraph = renderGraph;
 	        this._limitConnections = limitConnections;
 	        this._inputNames = inputNames;
-
+	
 	        //Setup WebGL output texture
 	        this._gl = gl;
 	        this._renderGraph = renderGraph;
 	        this._rendered = false;
 	    }
-
+	
 	    /**
 	    * Get the names of the inputs to this node.
 	    *
 	    * @return {String[]} An array of the names of the inputs ot the node.
 	    */
-
+	
 	    _createClass(GraphNode, [{
 	        key: "connect",
-
+	
 	        /**
 	        * Connect this node to the targetNode
 	        * 
@@ -2802,7 +2959,7 @@ var VideoContext =
 	        value: function connect(targetNode, targetPort) {
 	            return this._renderGraph.registerConnection(this, targetNode, targetPort);
 	        }
-
+	
 	        /**
 	        * Disconnect this node from the targetNode. If targetNode is undefind remove all out-bound connections.
 	        *
@@ -2813,7 +2970,7 @@ var VideoContext =
 	        key: "disconnect",
 	        value: function disconnect(targetNode) {
 	            var _this = this;
-
+	
 	            if (targetNode === undefined) {
 	                var toRemove = this._renderGraph.getOutputsForNode(this);
 	                toRemove.forEach(function (target) {
@@ -2829,7 +2986,7 @@ var VideoContext =
 	        get: function get() {
 	            return this._inputNames.slice();
 	        }
-
+	
 	        /**
 	        * The maximum number of connections that can be made to this node. If there is not limit this will return Infinity.
 	        *
@@ -2841,7 +2998,7 @@ var VideoContext =
 	            if (this._limitConnections === false) return Infinity;
 	            return this._inputNames.length;
 	        }
-
+	
 	        /**
 	        * Get an array of all the nodes which connect to this node.
 	        *
@@ -2856,7 +3013,7 @@ var VideoContext =
 	            });
 	            return result;
 	        }
-
+	
 	        /**
 	        * Get an array of all the nodes which this node outputs to.
 	        *
@@ -2868,10 +3025,10 @@ var VideoContext =
 	            return this._renderGraph.getOutputsForNode(this);
 	        }
 	    }]);
-
+	
 	    return GraphNode;
 	})();
-
+	
 	exports["default"] = GraphNode;
 	module.exports = exports["default"];
 
@@ -2881,47 +3038,47 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _sourcenode = __webpack_require__(2);
-
+	
 	var _sourcenode2 = _interopRequireDefault(_sourcenode);
-
+	
 	var ImageNode = (function (_SourceNode) {
 	    _inherits(ImageNode, _SourceNode);
-
+	
 	    /**
 	    * Initialise an instance of an ImageNode.
 	    * This should not be called directly, but created through a call to videoContext.createImageNode();
 	    */
-
+	
 	    function ImageNode(src, gl, renderGraph, currentTime) {
 	        var preloadTime = arguments.length <= 4 || arguments[4] === undefined ? 4 : arguments[4];
-
+	
 	        _classCallCheck(this, ImageNode);
-
+	
 	        _get(Object.getPrototypeOf(ImageNode.prototype), "constructor", this).call(this, src, gl, renderGraph, currentTime);
 	        this._preloadTime = preloadTime;
 	    }
-
+	
 	    _createClass(ImageNode, [{
 	        key: "_load",
 	        value: function _load() {
 	            var _this = this;
-
+	
 	            if (this._element !== undefined) {
 	                return;
 	            }
@@ -2968,7 +3125,7 @@ var VideoContext =
 	            //if (!super._update(currentTime)) return false;
 	            _get(Object.getPrototypeOf(ImageNode.prototype), "_update", this).call(this, currentTime);
 	            if (this._startTime - this._currentTime < this._preloadTime && this._state !== _sourcenode.SOURCENODESTATE.waiting && this._state !== _sourcenode.SOURCENODESTATE.ended) this._load();
-
+	
 	            if (this._state === _sourcenode.SOURCENODESTATE.playing) {
 	                return true;
 	            } else if (this._state === _sourcenode.SOURCENODESTATE.paused) {
@@ -2979,10 +3136,10 @@ var VideoContext =
 	            }
 	        }
 	    }]);
-
+	
 	    return ImageNode;
 	})(_sourcenode2["default"]);
-
+	
 	exports["default"] = ImageNode;
 	module.exports = exports["default"];
 
@@ -2992,42 +3149,42 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _sourcenode = __webpack_require__(2);
-
+	
 	var _sourcenode2 = _interopRequireDefault(_sourcenode);
-
+	
 	var CanvasNode = (function (_SourceNode) {
 	    _inherits(CanvasNode, _SourceNode);
-
+	
 	    /**
 	    * Initialise an instance of a CanvasNode.
 	    * This should not be called directly, but created through a call to videoContext.createCanvasNode();
 	    */
-
+	
 	    function CanvasNode(canvas, gl, renderGraph, currentTime) {
 	        var preloadTime = arguments.length <= 4 || arguments[4] === undefined ? 4 : arguments[4];
-
+	
 	        _classCallCheck(this, CanvasNode);
-
+	
 	        _get(Object.getPrototypeOf(CanvasNode.prototype), "constructor", this).call(this, canvas, gl, renderGraph, currentTime);
 	        this._preloadTime = preloadTime;
 	    }
-
+	
 	    _createClass(CanvasNode, [{
 	        key: "_load",
 	        value: function _load() {
@@ -3059,7 +3216,7 @@ var VideoContext =
 	            //if (!super._update(currentTime)) return false;
 	            _get(Object.getPrototypeOf(CanvasNode.prototype), "_update", this).call(this, currentTime);
 	            if (this._startTime - this._currentTime < this._preloadTime && this._state !== _sourcenode.SOURCENODESTATE.waiting && this._state !== _sourcenode.SOURCENODESTATE.ended) this._load();
-
+	
 	            if (this._state === _sourcenode.SOURCENODESTATE.playing) {
 	                return true;
 	            } else if (this._state === _sourcenode.SOURCENODESTATE.paused) {
@@ -3070,10 +3227,10 @@ var VideoContext =
 	            }
 	        }
 	    }]);
-
+	
 	    return CanvasNode;
 	})(_sourcenode2["default"]);
-
+	
 	exports["default"] = CanvasNode;
 	module.exports = exports["default"];
 
@@ -3083,71 +3240,71 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _processingnode = __webpack_require__(8);
-
+	
 	var _processingnode2 = _interopRequireDefault(_processingnode);
-
+	
 	var _utilsJs = __webpack_require__(3);
-
+	
 	var CompositingNode = (function (_ProcessingNode) {
 	    _inherits(CompositingNode, _ProcessingNode);
-
+	
 	    /**
 	    * Initialise an instance of a Compositing Node. You should not instantiate this directly, but use VideoContest.createCompositingNode().
 	    */
-
+	
 	    function CompositingNode(gl, renderGraph, definition) {
 	        _classCallCheck(this, CompositingNode);
-
+	
 	        var placeholderTexture = (0, _utilsJs.createElementTexutre)(gl);
 	        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
 	        _get(Object.getPrototypeOf(CompositingNode.prototype), "constructor", this).call(this, gl, renderGraph, definition, definition.inputs, false);
 	        this._placeholderTexture = placeholderTexture;
 	    }
-
+	
 	    _createClass(CompositingNode, [{
 	        key: "_render",
 	        value: function _render() {
 	            var _this = this;
-
+	
 	            var gl = this._gl;
 	            gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
 	            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._texture, 0);
 	            gl.clearColor(0, 0, 0, 0); // green;
 	            gl.clear(gl.COLOR_BUFFER_BIT);
 	            gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
+	
 	            this.inputs.forEach(function (node) {
 	                if (node === undefined) return;
 	                _get(Object.getPrototypeOf(CompositingNode.prototype), "_render", _this).call(_this);
-
+	
 	                //map the input textures input the node
 	                var texture = node._texture;
 	                var textureOffset = 0;
-
+	
 	                var _iteratorNormalCompletion = true;
 	                var _didIteratorError = false;
 	                var _iteratorError = undefined;
-
+	
 	                try {
 	                    for (var _iterator = _this._inputTextureUnitMapping[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                        var mapping = _step.value;
-
+	
 	                        gl.activeTexture(mapping.textureUnit);
 	                        var textureLocation = gl.getUniformLocation(_this._program, mapping.name);
 	                        gl.uniform1i(textureLocation, _this._parameterTextureCount + textureOffset);
@@ -3168,17 +3325,17 @@ var VideoContext =
 	                        }
 	                    }
 	                }
-
+	
 	                gl.drawArrays(gl.TRIANGLES, 0, 6);
 	            });
-
+	
 	            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	        }
 	    }]);
-
+	
 	    return CompositingNode;
 	})(_processingnode2["default"]);
-
+	
 	exports["default"] = CompositingNode;
 	module.exports = exports["default"];
 
@@ -3188,43 +3345,43 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _graphnode = __webpack_require__(4);
-
+	
 	var _graphnode2 = _interopRequireDefault(_graphnode);
-
+	
 	var _utilsJs = __webpack_require__(3);
-
+	
 	var _exceptionsJs = __webpack_require__(9);
-
+	
 	var ProcessingNode = (function (_GraphNode) {
 	    _inherits(ProcessingNode, _GraphNode);
-
+	
 	    /**
 	    * Initialise an instance of a ProcessingNode.
 	    *
 	    * This class is not used directly, but is extended to create CompositingNodes, TransitionNodes, and EffectNodes.
 	    */
-
+	
 	    function ProcessingNode(gl, renderGraph, definition, inputNames, limitConnections) {
 	        var _this = this;
-
+	
 	        _classCallCheck(this, ProcessingNode);
-
+	
 	        _get(Object.getPrototypeOf(ProcessingNode.prototype), "constructor", this).call(this, gl, renderGraph, inputNames, limitConnections);
 	        this._vertexShader = definition.vertexShader;
 	        this._fragmentShader = definition.fragmentShader;
@@ -3239,7 +3396,7 @@ var VideoContext =
 	            var propertyType = definition.properties[propertyName].type;
 	            this._properties[propertyName] = { type: propertyType, value: propertyValue };
 	        }
-
+	
 	        this._inputTextureUnitMapping = [];
 	        this._maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
 	        this._boundTextureUnits = 0;
@@ -3249,15 +3406,15 @@ var VideoContext =
 	        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.canvas.width, gl.canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 	        //compile the shader
 	        this._program = (0, _utilsJs.createShaderProgram)(gl, this._vertexShader, this._fragmentShader);
-
+	
 	        //create and setup the framebuffer
 	        this._framebuffer = gl.createFramebuffer();
 	        gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
 	        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._texture, 0);
 	        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
+	
 	        //create properties on this object for the passed properties
-
+	
 	        var _loop = function (propertyName) {
 	            Object.defineProperty(_this, propertyName, {
 	                get: function get() {
@@ -3268,11 +3425,11 @@ var VideoContext =
 	                }
 	            });
 	        };
-
+	
 	        for (var propertyName in this._properties) {
 	            _loop(propertyName);
 	        }
-
+	
 	        //create texutres for any texture properties
 	        for (var propertyName in this._properties) {
 	            var propertyValue = this._properties[propertyName].value;
@@ -3286,16 +3443,16 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        //calculate texutre units for input textures
 	        var _iteratorNormalCompletion = true;
 	        var _didIteratorError = false;
 	        var _iteratorError = undefined;
-
+	
 	        try {
 	            for (var _iterator = definition.inputs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                var inputName = _step.value;
-
+	
 	                this._inputTextureUnitMapping.push({ name: inputName, textureUnit: gl.TEXTURE0 + this._boundTextureUnits });
 	                this._boundTextureUnits += 1;
 	                this._inputTextureCount += 1;
@@ -3303,7 +3460,7 @@ var VideoContext =
 	                    throw new _exceptionsJs.RenderException("Trying to bind more than available textures units to shader");
 	                }
 	            }
-
+	
 	            //find the locations of the properties in the compiled shader
 	        } catch (err) {
 	            _didIteratorError = true;
@@ -3319,7 +3476,7 @@ var VideoContext =
 	                }
 	            }
 	        }
-
+	
 	        for (var propertyName in this._properties) {
 	            if (this._properties[propertyName].type === "uniform") {
 	                this._properties[propertyName].location = this._gl.getUniformLocation(this._program, propertyName);
@@ -3327,7 +3484,7 @@ var VideoContext =
 	        }
 	        this._currentTimeLocation = this._gl.getUniformLocation(this._program, "currentTime");
 	        this._currentTime = 0;
-
+	
 	        //Other setup
 	        var positionLocation = gl.getAttribLocation(this._program, "a_position");
 	        var buffer = gl.createBuffer();
@@ -3338,10 +3495,10 @@ var VideoContext =
 	        var texCoordLocation = gl.getAttribLocation(this._program, "a_texCoord");
 	        gl.enableVertexAttribArray(texCoordLocation);
 	        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-
+	
 	        //console.log(gl.getUniformLocation(this._program, "u_image"));
 	    }
-
+	
 	    _createClass(ProcessingNode, [{
 	        key: "_update",
 	        value: function _update(currentTime) {
@@ -3358,21 +3515,21 @@ var VideoContext =
 	            this._rendered = true;
 	            var gl = this._gl;
 	            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
+	
 	            gl.useProgram(this._program);
-
+	
 	            //upload the default uniforms
 	            //gl.uniform1fv(this._currentTimeLocation, this._currentTime);
-
+	
 	            //upload/update the custom uniforms
 	            var textureOffset = 0;
-
+	
 	            for (var propertyName in this._properties) {
 	                var propertyValue = this._properties[propertyName].value;
 	                var propertyType = this._properties[propertyName].type;
 	                var propertyLocation = this._properties[propertyName].location;
 	                if (propertyType !== "uniform") continue;
-
+	
 	                if (typeof propertyValue === "number") {
 	                    gl.uniform1f(propertyLocation, propertyValue);
 	                } else if (Object.prototype.toString.call(propertyValue) === "[object Array]") {
@@ -3391,7 +3548,7 @@ var VideoContext =
 	                    var texture = this._properties[propertyName].texture;
 	                    var textureUnit = this._properties[propertyName].texutreUnit;
 	                    (0, _utilsJs.updateTexture)(gl, texture, propertyValue);
-
+	
 	                    gl.activeTexture(textureUnit);
 	                    gl.uniform1i(propertyLocation, textureOffset);
 	                    textureOffset += 1;
@@ -3405,10 +3562,10 @@ var VideoContext =
 	            }
 	        }
 	    }]);
-
+	
 	    return ProcessingNode;
 	})(_graphnode2["default"]);
-
+	
 	exports["default"] = ProcessingNode;
 	module.exports = exports["default"];
 
@@ -3418,18 +3575,18 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
 	exports.ConnectException = ConnectException;
 	exports.RenderException = RenderException;
-
+	
 	function ConnectException(message) {
 	    this.message = message;
 	    this.name = "ConnectionException";
 	}
-
+	
 	function RenderException(message) {
 	    this.message = message;
 	    this.name = "RenderException";
@@ -3441,28 +3598,28 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _ProcessingNodesProcessingnode = __webpack_require__(8);
-
+	
 	var _ProcessingNodesProcessingnode2 = _interopRequireDefault(_ProcessingNodesProcessingnode);
-
+	
 	var DestinationNode = (function (_ProcessingNode) {
 	    _inherits(DestinationNode, _ProcessingNode);
-
+	
 	    /**
 	    * Initialise an instance of a DestinationNode. 
 	    *
@@ -3470,10 +3627,10 @@ var VideoContext =
 	    * 
 	    * You should not instantiate this directly.
 	    */
-
+	
 	    function DestinationNode(gl, renderGraph) {
 	        _classCallCheck(this, DestinationNode);
-
+	
 	        var vertexShader = "\
 	            attribute vec2 a_position;\
 	            attribute vec2 a_texCoord;\
@@ -3482,7 +3639,7 @@ var VideoContext =
 	                gl_Position = vec4(vec2(2.0,2.0)*a_position-vec2(1.0, 1.0), 0.0, 1.0);\
 	                v_texCoord = a_texCoord;\
 	            }";
-
+	
 	        var fragmentShader = "\
 	            precision mediump float;\
 	            uniform sampler2D u_image;\
@@ -3491,39 +3648,39 @@ var VideoContext =
 	            void main(){\
 	                gl_FragColor = texture2D(u_image, v_texCoord);\
 	            }";
-
+	
 	        var deffinition = { fragmentShader: fragmentShader, vertexShader: vertexShader, properties: {}, inputs: ["u_image"] };
-
+	
 	        _get(Object.getPrototypeOf(DestinationNode.prototype), "constructor", this).call(this, gl, renderGraph, deffinition, deffinition.inputs, false);
 	    }
-
+	
 	    _createClass(DestinationNode, [{
 	        key: "_render",
 	        value: function _render() {
 	            var _this = this;
-
+	
 	            var gl = this._gl;
-
+	
 	            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 	            gl.enable(gl.BLEND);
 	            gl.clearColor(0, 0, 0, 0.0); // green;
 	            gl.clear(gl.COLOR_BUFFER_BIT);
-
+	
 	            this.inputs.forEach(function (node) {
 	                _get(Object.getPrototypeOf(DestinationNode.prototype), "_render", _this).call(_this);
 	                //map the input textures input the node
 	                var texture = node._texture;
 	                var textureOffset = 0;
-
+	
 	                var _iteratorNormalCompletion = true;
 	                var _didIteratorError = false;
 	                var _iteratorError = undefined;
-
+	
 	                try {
 	                    for (var _iterator = _this._inputTextureUnitMapping[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                        var mapping = _step.value;
-
+	
 	                        gl.activeTexture(mapping.textureUnit);
 	                        var textureLocation = gl.getUniformLocation(_this._program, mapping.name);
 	                        gl.uniform1i(textureLocation, _this._parameterTextureCount + textureOffset);
@@ -3544,15 +3701,15 @@ var VideoContext =
 	                        }
 	                    }
 	                }
-
+	
 	                gl.drawArrays(gl.TRIANGLES, 0, 6);
 	            });
 	        }
 	    }]);
-
+	
 	    return DestinationNode;
 	})(_ProcessingNodesProcessingnode2["default"]);
-
+	
 	exports["default"] = DestinationNode;
 	module.exports = exports["default"];
 
@@ -3562,45 +3719,45 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _processingnode = __webpack_require__(8);
-
+	
 	var _processingnode2 = _interopRequireDefault(_processingnode);
-
+	
 	var _utilsJs = __webpack_require__(3);
-
+	
 	var EffectNode = (function (_ProcessingNode) {
 	    _inherits(EffectNode, _ProcessingNode);
-
+	
 	    /**
 	    * Initialise an instance of an EffectNode. You should not instantiate this directly, but use VideoContest.createEffectNode().
 	    */
-
+	
 	    function EffectNode(gl, renderGraph, definition) {
 	        _classCallCheck(this, EffectNode);
-
+	
 	        var placeholderTexture = (0, _utilsJs.createElementTexutre)(gl);
 	        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
-
+	
 	        _get(Object.getPrototypeOf(EffectNode.prototype), "constructor", this).call(this, gl, renderGraph, definition, definition.inputs, true);
-
+	
 	        this._placeholderTexture = placeholderTexture;
 	    }
-
+	
 	    _createClass(EffectNode, [{
 	        key: "_render",
 	        value: function _render() {
@@ -3609,12 +3766,12 @@ var VideoContext =
 	            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._texture, 0);
 	            gl.clearColor(0, 0, 0, 0); // green;
 	            gl.clear(gl.COLOR_BUFFER_BIT);
-
+	
 	            _get(Object.getPrototypeOf(EffectNode.prototype), "_render", this).call(this);
-
+	
 	            var inputs = this._renderGraph.getInputsForNode(this);
 	            var textureOffset = 0;
-
+	
 	            for (var i = 0; i < this._inputTextureUnitMapping.length; i++) {
 	                var inputTexture = this._placeholderTexture;
 	                var textureUnit = this._inputTextureUnitMapping[i].textureUnit;
@@ -3622,7 +3779,7 @@ var VideoContext =
 	                if (i < inputs.length && inputs[i] !== undefined) {
 	                    inputTexture = inputs[i]._texture;
 	                }
-
+	
 	                gl.activeTexture(textureUnit);
 	                var textureLocation = gl.getUniformLocation(this._program, textureName);
 	                gl.uniform1i(textureLocation, this._parameterTextureCount + textureOffset);
@@ -3633,10 +3790,10 @@ var VideoContext =
 	            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	        }
 	    }]);
-
+	
 	    return EffectNode;
 	})(_processingnode2["default"]);
-
+	
 	exports["default"] = EffectNode;
 	module.exports = exports["default"];
 
@@ -3646,45 +3803,45 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+	
 	var _effectnode = __webpack_require__(11);
-
+	
 	var _effectnode2 = _interopRequireDefault(_effectnode);
-
+	
 	var TransitionNode = (function (_EffectNode) {
 	    _inherits(TransitionNode, _EffectNode);
-
+	
 	    /**
 	    * Initialise an instance of a TransitionNode. You should not instantiate this directly, but use VideoContest.createTransitonNode().
 	    */
-
+	
 	    function TransitionNode(gl, renderGraph, definition) {
 	        _classCallCheck(this, TransitionNode);
-
+	
 	        _get(Object.getPrototypeOf(TransitionNode.prototype), "constructor", this).call(this, gl, renderGraph, definition);
 	        this._transitions = {};
-
+	
 	        //save a version of the original property values
 	        this._initialPropertyValues = {};
 	        for (var propertyName in this._properties) {
 	            this._initialPropertyValues[propertyName] = this._properties[propertyName].value;
 	        }
 	    }
-
+	
 	    _createClass(TransitionNode, [{
 	        key: "_doesTransitionFitOnTimeline",
 	        value: function _doesTransitionFitOnTimeline(testTransition) {
@@ -3692,11 +3849,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion = true;
 	            var _didIteratorError = false;
 	            var _iteratorError = undefined;
-
+	
 	            try {
 	                for (var _iterator = this._transitions[testTransition.property][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                    var transition = _step.value;
-
+	
 	                    if (testTransition.start > transition.start && testTransition.start < transition.end) return false;
 	                    if (testTransition.end > transition.start && testTransition.end < transition.end) return false;
 	                    if (transition.start > testTransition.start && transition.start < testTransition.end) return false;
@@ -3716,7 +3873,7 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return true;
 	        }
 	    }, {
@@ -3724,12 +3881,12 @@ var VideoContext =
 	        value: function _insertTransitionInTimeline(transition) {
 	            if (this._transitions[transition.property] === undefined) this._transitions[transition.property] = [];
 	            this._transitions[transition.property].push(transition);
-
+	
 	            this._transitions[transition.property].sort(function (a, b) {
 	                return a.start - b.start;
 	            });
 	        }
-
+	
 	        /**
 	        * Create a transition on the timeline.
 	        * 
@@ -3743,13 +3900,13 @@ var VideoContext =
 	        key: "transition",
 	        value: function transition(startTime, endTime, currentValue, targetValue) {
 	            var propertyName = arguments.length <= 4 || arguments[4] === undefined ? "mix" : arguments[4];
-
+	
 	            var transition = { start: startTime + this._currentTime, end: endTime + this._currentTime, current: currentValue, target: targetValue, property: propertyName };
 	            if (!this._doesTransitionFitOnTimeline(transition)) return false;
 	            this._insertTransitionInTimeline(transition);
 	            return true;
 	        }
-
+	
 	        /**
 	        * Clear all transistions on the passed property. If no property is defined clear all transitions on the node.
 	        * 
@@ -3764,7 +3921,7 @@ var VideoContext =
 	                this._transitions[propertyName] = [];
 	            }
 	        }
-
+	
 	        /**
 	        * Clear a transistion on the passed property that the specified time lies within.
 	        * 
@@ -3797,14 +3954,14 @@ var VideoContext =
 	                    value = this._transitions[propertyName][0].current;
 	                }
 	                var transitionActive = false;
-
+	
 	                for (var i = 0; i < this._transitions[propertyName].length; i++) {
 	                    var transition = this._transitions[propertyName][i];
 	                    if (currentTime > transition.end) {
 	                        value = transition.target;
 	                        continue;
 	                    }
-
+	
 	                    if (currentTime > transition.start && currentTime < transition.end) {
 	                        var difference = transition.target - transition.current;
 	                        var progress = (this._currentTime - transition.start) / (transition.end - transition.start);
@@ -3813,15 +3970,15 @@ var VideoContext =
 	                        break;
 	                    }
 	                }
-
+	
 	                if (!transitionActive) this[propertyName] = value;
 	            }
 	        }
 	    }]);
-
+	
 	    return TransitionNode;
 	})(_effectnode2["default"]);
-
+	
 	exports["default"] = TransitionNode;
 	module.exports = exports["default"];
 
@@ -3831,35 +3988,35 @@ var VideoContext =
 
 	//Matthew Shotton, R&D User Experience,© BBC 2015
 	"use strict";
-
+	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+	
 	var _exceptionsJs = __webpack_require__(9);
-
+	
 	var RenderGraph = (function () {
 	    /**
 	    * Manages the rendering graph.
 	    */
-
+	
 	    function RenderGraph() {
 	        _classCallCheck(this, RenderGraph);
-
+	
 	        this.connections = [];
 	    }
-
+	
 	    /**
 	    * Get a list of nodes which are connected to the output of the passed node.
 	    * 
 	    * @param {GraphNode} node - the node to get the outputs for.
 	    * @return {GraphNode[]} An array of the nodes which are connected to the output.
 	    */
-
+	
 	    _createClass(RenderGraph, [{
 	        key: "getOutputsForNode",
 	        value: function getOutputsForNode(node) {
@@ -3871,7 +4028,7 @@ var VideoContext =
 	            });
 	            return results;
 	        }
-
+	
 	        /**
 	        * Get a list of nodes which are connected, by input name, to the given node. Array contains objects of the form: {"source":sourceNode, "type":"name", "name":inputName, "destination":destinationNode}.
 	        *
@@ -3889,7 +4046,7 @@ var VideoContext =
 	            });
 	            return results;
 	        }
-
+	
 	        /**
 	        * Get a list of nodes which are connected, by z-index name, to the given node. Array contains objects of the form: {"source":sourceNode, "type":"zIndex", "zIndex":0, "destination":destinationNode}.
 	        * 
@@ -3910,7 +4067,7 @@ var VideoContext =
 	            });
 	            return results;
 	        }
-
+	
 	        /**
 	        * Get a list of nodes which are connected as inputs to the given node. The length of the return array is always equal to the number of inputs for the node, with undefined taking the place of any inputs not connected.
 	        * 
@@ -3924,20 +4081,20 @@ var VideoContext =
 	            var results = [];
 	            var namedInputs = this.getNamedInputsForNode(node);
 	            var indexedInputs = this.getZIndexInputsForNode(node);
-
+	
 	            if (node._limitConnections === true) {
 	                for (var i = 0; i < inputNames.length; i++) {
 	                    results[i] = undefined;
 	                }
-
+	
 	                var _iteratorNormalCompletion = true;
 	                var _didIteratorError = false;
 	                var _iteratorError = undefined;
-
+	
 	                try {
 	                    for (var _iterator = namedInputs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 	                        var connection = _step.value;
-
+	
 	                        var index = inputNames.indexOf(connection.name);
 	                        results[index] = connection.source;
 	                    }
@@ -3955,7 +4112,7 @@ var VideoContext =
 	                        }
 	                    }
 	                }
-
+	
 	                var indexedInputsIndex = 0;
 	                for (var i = 0; i < results.length; i++) {
 	                    if (results[i] === undefined && indexedInputs[indexedInputsIndex] !== undefined) {
@@ -3967,11 +4124,11 @@ var VideoContext =
 	                var _iteratorNormalCompletion2 = true;
 	                var _didIteratorError2 = false;
 	                var _iteratorError2 = undefined;
-
+	
 	                try {
 	                    for (var _iterator2 = namedInputs[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	                        var connection = _step2.value;
-
+	
 	                        results.push(connection.source);
 	                    }
 	                } catch (err) {
@@ -3988,15 +4145,15 @@ var VideoContext =
 	                        }
 	                    }
 	                }
-
+	
 	                var _iteratorNormalCompletion3 = true;
 	                var _didIteratorError3 = false;
 	                var _iteratorError3 = undefined;
-
+	
 	                try {
 	                    for (var _iterator3 = indexedInputs[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 	                        var connection = _step3.value;
-
+	
 	                        results.push(connection.source);
 	                    }
 	                } catch (err) {
@@ -4016,7 +4173,7 @@ var VideoContext =
 	            }
 	            return results;
 	        }
-
+	
 	        /**
 	        * Check if a named input on a node is available to connect too.
 	        * @param {GraphNode} node - the node to check.
@@ -4029,11 +4186,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion4 = true;
 	            var _didIteratorError4 = false;
 	            var _iteratorError4 = undefined;
-
+	
 	            try {
 	                for (var _iterator4 = this.connections[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	                    var connection = _step4.value;
-
+	
 	                    if (connection.type === "name") {
 	                        if (connection.destination === node && connection.name === inputName) {
 	                            return false;
@@ -4054,10 +4211,10 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return true;
 	        }
-
+	
 	        /**
 	        * Register a connection between two nodes.
 	        * 
@@ -4077,7 +4234,7 @@ var VideoContext =
 	                this.connections.push({ "source": sourceNode, "type": "zIndex", "zIndex": target, "destination": destinationNode });
 	            } else if (typeof target === "string" && destinationNode._limitConnections) {
 	                //target is a named port
-
+	
 	                //make sure named port is free
 	                if (this.isInputAvailable(destinationNode, target)) {
 	                    this.connections.push({ "source": sourceNode, "type": "name", "name": target, "destination": destinationNode });
@@ -4093,7 +4250,7 @@ var VideoContext =
 	            }
 	            return true;
 	        }
-
+	
 	        /**
 	        * Remove a connection between two nodes.
 	        * @param {GraphNode} sourceNode - the node to unregsiter connection from.
@@ -4104,22 +4261,22 @@ var VideoContext =
 	        key: "unregisterConnection",
 	        value: function unregisterConnection(sourceNode, destinationNode) {
 	            var _this = this;
-
+	
 	            var toRemove = [];
-
+	
 	            this.connections.forEach(function (connection) {
 	                if (connection.source === sourceNode && connection.destination === destinationNode) {
 	                    toRemove.push(connection);
 	                }
 	            });
-
+	
 	            if (toRemove.length === 0) return false;
-
+	
 	            toRemove.forEach(function (removeNode) {
 	                var index = _this.connections.indexOf(removeNode);
 	                _this.connections.splice(index, 1);
 	            });
-
+	
 	            return true;
 	        }
 	    }], [{
@@ -4129,11 +4286,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion5 = true;
 	            var _didIteratorError5 = false;
 	            var _iteratorError5 = undefined;
-
+	
 	            try {
 	                for (var _iterator5 = connections[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	                    var conn = _step5.value;
-
+	
 	                    if (conn.source === node) {
 	                        results.push(conn);
 	                    }
@@ -4152,7 +4309,7 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return results;
 	        }
 	    }, {
@@ -4162,11 +4319,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion6 = true;
 	            var _didIteratorError6 = false;
 	            var _iteratorError6 = undefined;
-
+	
 	            try {
 	                for (var _iterator6 = connections[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
 	                    var conn = _step6.value;
-
+	
 	                    if (conn.destination === node) {
 	                        results.push(conn);
 	                    }
@@ -4185,7 +4342,7 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return results;
 	        }
 	    }, {
@@ -4195,11 +4352,11 @@ var VideoContext =
 	            var _iteratorNormalCompletion7 = true;
 	            var _didIteratorError7 = false;
 	            var _iteratorError7 = undefined;
-
+	
 	            try {
 	                for (var _iterator7 = connections[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
 	                    var conn = _step7.value;
-
+	
 	                    inputLess.push(conn.source);
 	                }
 	            } catch (err) {
@@ -4216,15 +4373,15 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            var _iteratorNormalCompletion8 = true;
 	            var _didIteratorError8 = false;
 	            var _iteratorError8 = undefined;
-
+	
 	            try {
 	                for (var _iterator8 = connections[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
 	                    var conn = _step8.value;
-
+	
 	                    var index = inputLess.indexOf(conn.destination);
 	                    if (index !== -1) {
 	                        inputLess.splice(index, 1);
@@ -4244,16 +4401,17 @@ var VideoContext =
 	                    }
 	                }
 	            }
-
+	
 	            return inputLess;
 	        }
 	    }]);
-
+	
 	    return RenderGraph;
 	})();
-
+	
 	exports["default"] = RenderGraph;
 	module.exports = exports["default"];
 
 /***/ }
 /******/ ]);
+//# sourceMappingURL=videocontext.js.map

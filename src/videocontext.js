@@ -9,24 +9,10 @@ import DestinationNode from "./DestinationNode/destinationnode.js";
 import EffectNode from "./ProcessingNodes/effectnode.js";
 import TransitionNode from "./ProcessingNodes/transitionnode.js";
 import RenderGraph from "./rendergraph.js";
-import { createSigmaGraphDataFromRenderGraph, visualiseVideoContextTimeline, visualiseVideoContextGraph, createControlFormForNode } from "./utils.js";
+import { createSigmaGraphDataFromRenderGraph, visualiseVideoContextTimeline, visualiseVideoContextGraph, createControlFormForNode, UpdateablesManager } from "./utils.js";
 
-let updateables = [];
-let previousTime;
-function registerUpdateable(updateable){
-    updateables.push(updateable);
-}
-function update(time){
-    if (previousTime === undefined) previousTime = time;
-    let dt = (time - previousTime)/1000;
-    for(let i = 0; i < updateables.length; i++){
-        updateables[i]._update(dt);
-    }
-    previousTime = time;
-    requestAnimationFrame(update);
-}
-update();
 
+let updateablesManager = new UpdateablesManager();
 
 export default class VideoContext{
     /**
@@ -42,16 +28,29 @@ export default class VideoContext{
     * ctx.play();
     *
     */
-    constructor(canvas, initErrorCallback){
+    constructor(canvas, initErrorCallback, options={"preserveDrawingBuffer":true, "manualUpdate":false, "endOnLastSourceEnd":true, webglContextAttributes: {preserveDrawingBuffer: true, alpha: false }}){
         this._canvas = canvas;
-        this._gl = canvas.getContext("experimental-webgl", { preserveDrawingBuffer: true, alpha: false });
+        let manualUpdate = false;
+        this.endOnLastSourceEnd = true;
+        let webglContextAttributes = {preserveDrawingBuffer: true, alpha: false };
+
+        if ("manualUpdate" in options) manualUpdate = options.manualUpdate;
+        if ("endOnLastSourceEnd" in options) this.endOnLastSourceEnd = options.endOnLastSourceEnd;
+        if ("webglContextAttributes" in options) webglContextAttributes = options.webglContextAttributes;
+
+        if (webglContextAttributes.alpha === undefined) webglContextAttributes.alpha = false;
+        if (webglContextAttributes.alpha === true){
+            console.error("webglContextAttributes.alpha must be false for correct opeation");
+        }
+
+
+        this._gl = canvas.getContext("experimental-webgl", webglContextAttributes);
         if(this._gl === null){
             console.error("Failed to intialise WebGL.");
             if(initErrorCallback)initErrorCallback();
             return;
         }
 
-        this.endOnLastSourceEnd = true;
 
         this._renderGraph = new RenderGraph();
         this._sourceNodes = [];
@@ -69,7 +68,9 @@ export default class VideoContext{
 
         this._timelineCallbacks = [];
 
-        registerUpdateable(this);
+        if(!manualUpdate){
+            updateablesManager.register(this);
+        }
     }
 
     /**
@@ -584,6 +585,32 @@ export default class VideoContext{
         }
         return false;
     }
+
+
+    /**
+    * This allows manual calling of the update loop of the videoContext. 
+    *
+    * @param {Number} dt - The difference in seconds between this and the previous calling of update.
+    * @example
+    *
+    * var canvasElement = document.getElemenyById("canvas");
+    * var ctx = new VideoContext(canvasElement, undefined, {"manualUpdate" : true});
+    * 
+    * var previousTime;
+    * function update(time){
+    *     if (previousTime === undefined) previousTime = time;
+    *     var dt = (time - previousTime)/1000;
+    *     ctx.update(dt);
+    *     previousTime = time;
+    *     requestAnimationFrame(update);
+    * }
+    * update();
+    *
+    */
+    update(dt){
+        this._update(dt);
+    }
+
 
     _update(dt){
         if (this._state === VideoContext.STATE.PLAYING || this._state === VideoContext.STATE.STALLED || this._state === VideoContext.STATE.PAUSED) {
